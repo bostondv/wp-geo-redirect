@@ -1,0 +1,32 @@
+{
+  "name": "bostondv/wp-geo-redirect",
+  "type": "wordpress-plugin",
+  "license": "MIT",
+  "description": "Allows you to redirect visitors or switch language according to their country.",
+  "homepage": "https://github.com/bostondv/wp-geo-redirect",
+  "authors": [
+    {
+      "name": "Boston Dell-Vandenberg",
+      "email": "boston@pomelodesign.com",
+      "homepage": "http://www.pomelodesign.com"
+    }
+  ],
+  "keywords": [
+    "geo-redirect",
+    "multilanguage",
+    "multidomain",
+    "polylang",
+    "geolocation",
+    "redirection",
+    "geographical",
+    "redirect",
+    "localization"
+  ],
+  "support": {
+    "issues": "https://github.com/bostondv/wp-geo-redirect/issues"
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "composer/installers": "~1.0"
+  }
+}
