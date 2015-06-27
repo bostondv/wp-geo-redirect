@@ -10,10 +10,12 @@ Version: 1.0.0
 License: MIT
 License URI: http://opensource.org/licenses/MIT
 */
+
 require_once 'geoip/geoipcity.inc';
 require_once 'geo-redirect-admin.php';
 
 class WP_Geo_Redirect {
+
   private $ip;
   private $gi;
   private $country_code;
@@ -368,6 +370,7 @@ class WP_Geo_Redirect {
   public function __destruct() {
     geoip_close( $this->gi );
   } 
+
 }
 
 function geo_redirect_client_location() {
