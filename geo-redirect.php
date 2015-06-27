@@ -219,8 +219,8 @@ class Geo_Redirect {
   }
 
   private function beforeRedirect() {
-    if ( $this->getRedirectDataFlag('only_once') == 1 ) {
-      setcookie( 'wordpress_geo_redirect_once', '1', time() + 60 * 60 * 24 * 365, '/' );
+    if ( $this->getRedirectDataFlag( 'only_once' ) == 1 ) {
+      setcookie( 'wordpress_geo_redirect_once', '1', time() + 60 * 60 * 24 * 7, '/' ); // 7 day expiry
     } 
   }
 
