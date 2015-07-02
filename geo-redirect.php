@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Geo Redirect
+Plugin Name: WP Geo Redirect
 Plugin URI: https://github.com/bostondv/wp-geo-redirect
 Description: This plugin allows you to redirect your visitors or switch language according to their country.
 Author: bostondv
