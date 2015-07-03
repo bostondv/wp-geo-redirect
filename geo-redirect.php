@@ -6,9 +6,10 @@ Description: This plugin allows you to redirect your visitors or switch language
 Author: bostondv
 Author URI: http://pomelodesign.com
 Donate link: http://pomelodesign.com/donate
-Version: 1.0.0
+Version: 1.0.1
 License: MIT
 License URI: http://opensource.org/licenses/MIT
+Text Domain: wp-geo-redirect
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
