@@ -11,6 +11,10 @@ License: MIT
 License URI: http://opensource.org/licenses/MIT
 */
 
+if ( ! defined( 'ABSPATH' ) ) {
+  exit; // Exit if accessed directly
+}
+
 require_once 'geoip/geoipcity.inc';
 require_once 'geo-redirect-admin.php';
 

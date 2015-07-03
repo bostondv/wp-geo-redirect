@@ -3,82 +3,106 @@
  * Geo Redirect Admin functions
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+  exit; // Exit if accessed directly
+}
+
 class WP_Geo_Redirect_Admin {
 
-  private $options;
+  var $option_field;
+  var $options;
+  var $page_id;
+
+  public static $defaults = array(
+    'redirect'      => array(),
+    'only_outsite'  => 0,
+    'only_root'     => 0,
+    'only_once'     => 0,
+    'always_root'   => 1,
+    'lang_slug'     => 'lang'
+  );
 
   public function __construct() {
-    $this->options = get_option( 'wp_geo_redirect_data' );
 
-    if ( function_exists( 'add_submenu_page' ) ) {
-      add_submenu_page( 'options-general.php', __( 'Geo Redirect' ), __( 'Geo Redirect' ), 'manage_options', 'wp-geo-redirect', array( $this, 'display_page' ) );
-    }
+    $this->page_id = 'wp-geo-redirect';
+    $this->option_field = 'wp_geo_redirect_data';
+    $this->options = get_option( $this->option_field );
+
+    load_plugin_textdomain( 'wp-geo-redirect', plugin_dir_path( __FILE__ ) . 'lang', basename( dirname( __FILE__ ) ) . '/lang' );
+
+    add_action( 'admin_init', array( $this, 'admin_init'), 10 );
+    add_action( 'admin_menu', array( $this, 'admin_menu'), 20 );
+
   }
 
-  public function display_page() {
-    $this->add_javascript();
-    $this->add_styles();
+  function admin_init() {
 
-    $html = '';
+    add_option( $this->option_field, WP_Geo_Redirect_Admin::$defaults );
 
-    if ( isset( $_POST['submit'] ) && check_admin_referer( 'submit_wp_geo_redirect_x','wp_geo_redirect_nonce_y' ) )
+  }
+
+  function admin_menu() {
+
+    if ( function_exists( 'add_submenu_page' ) ) {
+      add_submenu_page( 'options-general.php', __( 'Geo Redirect', 'wp-geo-redirect' ), __( 'Geo Redirect', 'wp-geo-redirect' ), 'manage_options', $this->page_id, array( $this, 'render' ) );
+    }
+
+  }
+
+  public function render() {
+
+    if ( isset( $_POST['submit'] ) && check_admin_referer( 'submit_wp_geo_redirect_x', 'wp_geo_redirect_nonce_y' ) ) {
       $this->save();
-    
-    if ( !empty( $_POST['submit'] ) )
-      $html .= '<div id="message" class="updated fade"><p><strong>' . __( 'Options saved.' ) . '</strong></p></div>';
-    
-    $html .= '
-      <div class="wrap geo-redirect-wrap">
-      <h2>' . __( 'Geo Redirect' ) . '</h2>
-      <form action="" method="post" enctype="multipart/form-data">';
-    
-    $redirect = '';
-    $only_outsite = 0;
-    $only_root = 0;
-    $only_once = 0;
-    $always_root = 1;
-    $lang_slug = 'lang';
-
-    if ( $this->options === false ) {
-      add_option( 'geo_redirect_data', '' );
-    } elseif ( is_array( $this->options ) ) {
-      $redirect = ( isset( $this->options['redirect'] ) ? $this->options['redirect'] : $redirect );
-      $only_outsite = ( isset( $this->options['only_outsite'] ) ? $this->options['only_outsite'] : $only_outsite );
-      $only_root = ( isset( $this->options['only_root'] ) ? $this->options['only_root'] : $only_root );
-      $only_once = ( isset( $this->options['only_once'] ) ? $this->options['only_once'] : $only_once );
-      $always_root = ( isset( $this->options['always_root'] ) ? $this->options['always_root'] : $always_root );
-      $lang_slug = ( isset( $this->options['lang_slug'] ) ? $this->options['lang_slug'] : $lang_slug );
     }
 
     $geoip = new GeoIP();
     $countries = $geoip->GEOIP_COUNTRY_NAMES;
     $country_codes = $geoip->GEOIP_COUNTRY_CODES;
     $lang_codes = $geoip->GEOIP_LANG_CODES;
+    
+    $this->add_javascript();
+    $this->add_styles();
 
-    if ( is_array( $countries ) ) {
-      asort($countries);
-      $html .= '<div class="tablenav top">';
-      $html .= '<div class="alignleft actions">';
-      $html .= '<select class="countries" name="countries[]">';
-        foreach ( $countries as $country_id => $country ) {
-          if ( $country_id == 0 ) {
-            $html .= '<option value="' . $country_id . '">' . __( 'Select country' ) . '</option>';
-          } elseif ( !in_array( $country_id, array( 1, 2 ) ) ) {
-            $html .= '<option value="' . $country_id . '" data-lang="' . strtolower( $lang_codes[$country_id] ) . '" data-country-code="' . strtolower( $country_codes[$country_id] ) . '">' . htmlspecialchars( $country ) . '</option>';
-          }
-        }
-      $html .= '</select>';
-      $html .= '<input onclick="return geoRedirect.addCountry();" type="submit" class="button-secondary action" value="Add country" />';
-      $html .= '</div></div><br clear="all" />';
-    }
+    $this->options = get_option( $this->option_field );
+    $html = '';
+    ?>
+
+    <?php if ( ! empty( $_POST['submit'] ) ) : ?>
+      <div id="message" class="updated fade"><p><strong><?php _e( 'Options saved.', 'wp-geo-redirect' ); ?></strong></p></div>';
+    <?php endif; ?>
+
+    <div class="wrap geo-redirect-wrap">
+      <h2><?php _e( 'Geo Redirect', 'wp-geo-redirect' ); ?></h2>
+      <form action="" method="post" enctype="multipart/form-data">
+
+    <?php if ( is_array( $countries ) ) : ?>
+      <?php asort($countries); ?>
+      <div class="tablenav top">
+        <div class="alignleft actions">
+          <select class="countries" name="countries[]">
+            <?php foreach ( $countries as $country_id => $country ) :
+              if ( $country_id == 0 ) : ?>
+                <option value="<?php echo $country_id; ?>"><?php _e( 'Select country', 'wp-geo-redirect' ); ?></option>
+              <?php elseif ( ! in_array( $country_id, array( 1, 2 ) ) ) : ?>
+                <option value="<?php echo $country_id; ?>" data-lang="<?php echo strtolower( $lang_codes[$country_id] ); ?>" data-country-code="<?php echo strtolower( $country_codes[$country_id] ); ?>">
+                  <?php echo htmlspecialchars( $country ); ?>
+                </option>
+              <?php endif;
+            endforeach ?>
+          </select>
+          <input onclick="return geoRedirect.addCountry();" type="submit" class="button-secondary action" value="Add country" />
+        </div>
+      </div>
+      <br clear="all" />
+    <?php endif;
 
     $html .= '<div class="geo-redirect-options">
               <table class="wp-list-table widefat striped plugins" cellspacing="0">
                 <thead>
                   <tr>
-                    <th scope="col" id="country" class="manage-column column-country" width="20%">' . __( 'Country' ) . '</th>
-                    <th scope="col" id="option" class="manage-column column-option" width="20%">' . __( 'Redirect Option' ) . '</th>
-                    <th scope="col" id="value" class="manage-column column-value" width="55%">' . __( 'Value' ) . '</th>
+                    <th scope="col" id="country" class="manage-column column-country" width="20%">' . __( 'Country', 'wp-geo-redirect' ) . '</th>
+                    <th scope="col" id="option" class="manage-column column-option" width="20%">' . __( 'Redirect Option', 'wp-geo-redirect' ) . '</th>
+                    <th scope="col" id="value" class="manage-column column-value" width="55%">' . __( 'Value', 'wp-geo-redirect' ) . '</th>
                     <th scope="col" id="actions" class="manage-column column-actions" width="5%"></th>
                   </tr>
                 </thead>
@@ -93,49 +117,47 @@ class WP_Geo_Redirect_Admin {
       'url' => ''
     );
 
-    if ( is_array( $redirect ) ) {
-      foreach ( $redirect as $data ) {
-        if ( $data['country_id'] == $default_redirect['country_id'] ) {
-          $default_redirect = $data;
-          continue;
-        }
-
-        $html .='<tr class="geo-redirect-option">'.
-                  '<td>'.
-                    '<input type="hidden" name="country_ids[]" value="'.$data['country_id'].'"/>'.
-                    '<span class="row-title" style="margin-top:4px;display:inline-block;">'.$countries[$data['country_id']].'</span>'.
-                  '</td>'.
-                  '<td>'.
-                      '<select class="redirect_options" name="redirect_options[]" onchange="geoRedirect.switchOption(this);">'.
-                          '<option value="1" ' . (($data['redirect_option'] == 1) ? 'selected="selected"' : '') . ' >' . __( 'Language Code' ) . '</option>'.
-                          '<option value="2" ' . (($data['redirect_option'] == 2) ? 'selected="selected"' : '') . ' >' . __( 'Domain Name' ) . '</option>'.
-                          '<option value="3" ' . (($data['redirect_option'] == 3) ? 'selected="selected"' : '') . ' >' . __( 'Static URL' ) . '</option>'.
-                      '</select>'.
-                  '</td>'.
-                  '<td id="redirect_options_container_' . $data['country_id'] . '">'.
-                    '<span id="redirect_option_value_' . $data['country_id'] . '_1" style="display:' . (($data['redirect_option'] == 1 || empty($data['redirect_option'])) ? 'block' : 'none') . '"><input class="input-text" name="lang_codes[]" type="text" maxlength="5" value="'.stripslashes($data['lang_code']).'"/>&nbsp;' . $this->pretty_permalink_checkbox($data) . '</span>'.
-                    '<span id="redirect_option_value_' . $data['country_id'] . '_2" style="display:' . (($data['redirect_option'] == 2) ? 'block' : 'none') . '"><input class="regular-text" name="domains[]" type="text" value="'.stripslashes($data['domain']).'"/></span>'.
-                    '<span id="redirect_option_value_' . $data['country_id'] . '_3" style="display:' . (($data['redirect_option'] == 3) ? 'block' : 'none') . '"><input class="regular-text" name="urls[]" type="text" value="'.stripslashes($data['url']).'"/></span>'.
-                  '</td>'.
-                  '<td>'.
-                    '<a onclick="return geoRedirect.removeCountry(this);" href="#" class="delete">' . __( 'Remove' ) . '</a>'.
-                  '</td>'.
-                '</tr>';
+    foreach ( $this->options['redirect'] as $data ) {
+      if ( $data['country_id'] == $default_redirect['country_id'] ) {
+        $default_redirect = $data;
+        continue;
       }
+
+      $html .='<tr class="geo-redirect-option">'.
+                '<td>'.
+                  '<input type="hidden" name="country_ids[]" value="'.$data['country_id'].'"/>'.
+                  '<span class="row-title" style="margin-top:4px;display:inline-block;">'.$countries[$data['country_id']].'</span>'.
+                '</td>'.
+                '<td>'.
+                    '<select class="redirect_options" name="redirect_options[]" onchange="geoRedirect.switchOption(this);">'.
+                        '<option value="1" ' . (($data['redirect_option'] == 1) ? 'selected="selected"' : '') . ' >' . __( 'Language Code', 'wp-geo-redirect' ) . '</option>'.
+                        '<option value="2" ' . (($data['redirect_option'] == 2) ? 'selected="selected"' : '') . ' >' . __( 'Domain Name', 'wp-geo-redirect' ) . '</option>'.
+                        '<option value="3" ' . (($data['redirect_option'] == 3) ? 'selected="selected"' : '') . ' >' . __( 'Static URL', 'wp-geo-redirect' ) . '</option>'.
+                    '</select>'.
+                '</td>'.
+                '<td id="redirect_options_container_' . $data['country_id'] . '">'.
+                  '<span id="redirect_option_value_' . $data['country_id'] . '_1" style="display:' . (($data['redirect_option'] == 1 || empty($data['redirect_option'])) ? 'block' : 'none') . '"><input class="input-text" name="lang_codes[]" type="text" maxlength="5" value="'.stripslashes($data['lang_code']).'"/>&nbsp;' . $this->pretty_permalink_checkbox($data) . '</span>'.
+                  '<span id="redirect_option_value_' . $data['country_id'] . '_2" style="display:' . (($data['redirect_option'] == 2) ? 'block' : 'none') . '"><input class="regular-text" name="domains[]" type="text" value="'.stripslashes($data['domain']).'"/></span>'.
+                  '<span id="redirect_option_value_' . $data['country_id'] . '_3" style="display:' . (($data['redirect_option'] == 3) ? 'block' : 'none') . '"><input class="regular-text" name="urls[]" type="text" value="'.stripslashes($data['url']).'"/></span>'.
+                '</td>'.
+                '<td>'.
+                  '<a onclick="return geoRedirect.removeCountry(this);" href="#" class="delete">' . __( 'Remove', 'wp-geo-redirect' ) . '</a>'.
+                '</td>'.
+              '</tr>';
     }
 
 
     $html .='<tr class="geo-redirect-option default">'.
               '<td>'.
                   '<input type="hidden" name="country_ids[]" value="' . $default_redirect['country_id'] . '"/>'.
-                  '<span class="row-title" style="margin-top:4px;display:inline-block;">' . __( 'Default redirect' ) . '</span>'.
+                  '<span class="row-title" style="margin-top:4px;display:inline-block;">' . __( 'Default redirect', 'wp-geo-redirect' ) . '</span>'.
               '</td>'.
               '<td>'.
                 '<select class="redirect_options" name="redirect_options[]" onchange="geoRedirect.switchOption(this);">'.
-                    '<option value="-1" ' . (($default_redirect['redirect_option'] == -1) ? 'selected="selected"' : '') . ' >' . __( 'None' ) . '</option>'.
-                    '<option value="1" ' . (($default_redirect['redirect_option'] == 1) ? 'selected="selected"' : '') . ' >' . __( 'Language Code' ) . '</option>'.
-                    '<option value="2" ' . (($default_redirect['redirect_option'] == 2) ? 'selected="selected"' : '') . ' >' . __( 'Domain Name' ) . '</option>'.
-                    '<option value="3" ' . (($default_redirect['redirect_option'] == 3) ? 'selected="selected"' : '') . ' >' . __( 'Static URL' ) . '</option>'.
+                    '<option value="-1" ' . (($default_redirect['redirect_option'] == -1) ? 'selected="selected"' : '') . ' >' . __( 'None', 'wp-geo-redirect' ) . '</option>'.
+                    '<option value="1" ' . (($default_redirect['redirect_option'] == 1) ? 'selected="selected"' : '') . ' >' . __( 'Language Code', 'wp-geo-redirect' ) . '</option>'.
+                    '<option value="2" ' . (($default_redirect['redirect_option'] == 2) ? 'selected="selected"' : '') . ' >' . __( 'Domain Name', 'wp-geo-redirect' ) . '</option>'.
+                    '<option value="3" ' . (($default_redirect['redirect_option'] == 3) ? 'selected="selected"' : '') . ' >' . __( 'Static URL', 'wp-geo-redirect' ) . '</option>'.
                 '</select>'.
               '</td>'.
               '<td id="redirect_options_container_' . $default_redirect['country_id'] . '">'.
@@ -156,13 +178,13 @@ class WP_Geo_Redirect_Admin {
     $html .= '<table class="wp-list-table widefat plugins" cellspacing="0">
           <thead>
             <tr>
-              <th scope="col" id="name" class="manage-column column-name" style="">' . __( 'Language URL variable' ) . '</th>
+              <th scope="col" id="name" class="manage-column column-name" style="">' . __( 'Language URL variable', 'wp-geo-redirect' ) . '</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>
-                <input class="input-text" name="lang_slug" value="'.$lang_slug.'" type="text"/> <span class="example">Example: '.get_home_url().'/?page_id=10&<strong>lang</strong>=en</span>
+                <input class="input-text" name="lang_slug" value="'.$this->options['lang_slug'].'" type="text"/> <span class="example">Example: '.get_home_url().'/?page_id=10&<strong>lang</strong>=en</span>
               </td>
             </tr>
           </tbody>
@@ -170,34 +192,35 @@ class WP_Geo_Redirect_Admin {
 
     $html .= '<br clear="all" />';
 
-    $html .= '<label><input type="checkbox" name="only_outsite" value="1" ' . ( ( $only_outsite == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect only visitors who come from another site by link' ) . '</label>';
+    $html .= '<label><input type="checkbox" name="only_outsite" value="1" ' . ( ( $this->options['only_outsite'] == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect only visitors who come from another site by link', 'wp-geo-redirect' ) . '</label>';
 
     $html .= '<br clear="all" />';
 
-    $html .= '<label><input type="checkbox" name="only_root" value="1" ' . ( ( $only_root == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect only visitors of  the site\'s root' ) . '</label>';
+    $html .= '<label><input type="checkbox" name="only_root" value="1" ' . ( ( $this->options['only_root'] == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect only visitors of  the site\'s root', 'wp-geo-redirect' ) . '</label>';
 
     $html .= '<br clear="all" />';
 
-    $html .= '<label><input type="checkbox" name="only_once" value="1" ' . ( ( $only_once == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect once' ) . '</label>';
+    $html .= '<label><input type="checkbox" name="only_once" value="1" ' . ( ( $this->options['only_once'] == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Redirect once', 'wp-geo-redirect' ) . '</label>';
 
     $html .= '<br clear="all" />';
 
-    $html .= '<label><input type="checkbox" name="always_root" value="1" ' . ( ( $always_root == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Always redirect visitors of the site\'s root' ) . '</label>'; 
+    $html .= '<label><input type="checkbox" name="always_root" value="1" ' . ( ( $this->options['always_root'] == 1 ) ? 'checked="checked"' : '' ) . '/> ' . __( 'Always redirect visitors of the site\'s root', 'wp-geo-redirect' ) . '</label>'; 
 
     $html .= '  <p class="submit">
-            <input type="submit" name="submit" class="button-primary" value="' . __( 'Save Changes' ) . '">
-          </p>'; 
+            <input type="submit" name="submit" class="button-primary" value="' . __( 'Save Changes', 'wp-geo-redirect' ) . '">
+          </p>'; ?>
 
-    $html .= wp_nonce_field( 'submit_wp_geo_redirect_x', 'wp_geo_redirect_nonce_y', true, false );
-    $html .= '</form></div>';
-    echo $html;
+        <?php wp_nonce_field( 'submit_wp_geo_redirect_x', 'wp_geo_redirect_nonce_y', true, false ); ?>
+      </form>
+    </div>
+    <?php
   }
 
   private function pretty_permalink_checkbox( $data ) {
     if ($data['lang_code'] == '') {
       $data['lang_code'] = 'some_lang';
     }
-    $html = '<label class="pretty-permalink"><span>' . __( 'Use pretty permalink' ) . '</span> <input type="checkbox" name="pretties[]" value="' . $data['country_id'] . '" ' . (($data['pretty'] == 1) ? 'checked="checked"' : '') . '></label>';
+    $html = '<label class="pretty-permalink"><span>' . __( 'Use pretty permalink', 'wp-geo-redirect' ) . '</span> <input type="checkbox" name="pretties[]" value="' . $data['country_id'] . '" ' . (($data['pretty'] == 1) ? 'checked="checked"' : '') . '></label>';
     return $html;
   }
 
@@ -333,11 +356,13 @@ class WP_Geo_Redirect_Admin {
     $only_outsite     = intval( @$_POST['only_outsite']) ;
     $only_root        = intval( @$_POST['only_root'] );
     $only_once        = intval( @$_POST['only_once'] );
-    $always_root        = intval( @$_POST['always_root'] );
+    $always_root       = intval( @$_POST['always_root'] );
     $lang_slug        = ( trim( @$_POST['lang_slug'] ) != '' ) ? (string) urlencode( strtolower( trim( $_POST['lang_slug'] ) ) ) : 'lang';
 
+    $redirect = array();
+
     if ( count( $country_ids ) > 0 ) {
-      $redirect = array();
+
       foreach ( $country_ids as $key => $country_id ) {
         $domain = (string) htmlspecialchars( strtolower( rtrim( trim( strip_tags( $domains[$key] ) ),'/') ) );
         if ($domain != '') {
@@ -351,12 +376,10 @@ class WP_Geo_Redirect_Admin {
           'lang_code'       => (string) htmlspecialchars( strtolower( trim( strip_tags( $lang_codes[$key] ) ) ) ),
           'pretty'          => ( in_array( intval( $country_id ), $pretties) ) ? 1 : 0,
           'domain'          => $domain,
-          'url'             => (string) htmlspecialchars( trim( strip_tags( $urls[$key] ) ) ) );
-        
+          'url'             => (string) htmlspecialchars( trim( strip_tags( $urls[$key] ) ) )
+        );
       }
       
-    } else {
-      $redirect = ''; 
     }
     
     $data = array(
@@ -368,13 +391,17 @@ class WP_Geo_Redirect_Admin {
       'lang_slug'     => $lang_slug
     );
 
-    update_option( 'wp_geo_redirect_data', $data );
+    update_option( $this->option_field, $data );
   }
 
 }
 
-function wp_geo_redirect_init() {
-  $geo_admin = new WP_Geo_Redirect_Admin();
-}
+/**
+ * Initialize the plugin
+ */
 
-add_action( 'admin_menu', 'wp_geo_redirect_init' );
+global $wp_geo_admin_instance;
+
+if ( class_exists('WP_Geo_Redirect_Admin') && ! $wp_geo_admin_instance ) {
+  $wp_geo_admin_instance = new WP_Geo_Redirect_Admin();
+}
