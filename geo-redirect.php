@@ -6,7 +6,7 @@ Description: This plugin allows you to redirect your visitors or switch language
 Author: bostondv
 Author URI: http://pomelodesign.com
 Donate link: http://pomelodesign.com/donate
-Version: 1.0.2
+Version: 1.0.3
 License: MIT
 License URI: http://opensource.org/licenses/MIT
 Text Domain: wp-geo-redirect
@@ -175,6 +175,7 @@ class WP_Geo_Redirect {
 
     if ( is_array( $this->geo_redirect_data['redirect'] ) ) {
       $this->getCountryId();
+      $this->country_id = 38;
 
       foreach( $this->geo_redirect_data['redirect'] as $data ) {
         if ( $this->country_id == $data['country_id'] ) {
@@ -212,7 +213,19 @@ class WP_Geo_Redirect {
 
         $url = $this->getPolylangRedirectUrl( $lang_code );
 
-        if ( $url && !is_wp_error( $url ) ) {
+        //var_dump($lang_code);
+        // var_dump($url);
+        //return;
+
+        if ( empty( $url ) )
+          return;
+
+        if ( is_wp_error( $url ) ) {
+          global $wp_query;
+          $wp_query->set_404();
+          status_header( 404 );
+        } else {
+          $url = preg_replace('/\?.*/', '', $url);
           if ( $_SERVER['QUERY_STRING'] ) {
             $url = $url . '?' . $_SERVER['QUERY_STRING'];
           }
@@ -322,7 +335,12 @@ class WP_Geo_Redirect {
     $from = $this->site_url . $this->request_uri;
 
     if ( is_singular() && !is_front_page() ) {
-      return get_permalink( pll_get_post( get_queried_object_id(), $lang->slug ) );
+      $translated_post_id = pll_get_post( get_queried_object_id(), $lang->slug );
+      if ( $translated_post_id && get_post_status( $translated_post_id ) === 'publish' ) {
+        return get_permalink( $translated_post_id );
+      } else {
+        return new WP_Error( '404', __( 'Page Not Found', 'wp-geo-redirect' ) );
+      }
     }
 
     if ( is_front_page() ) {
@@ -331,7 +349,12 @@ class WP_Geo_Redirect {
 
     if ( is_home() ) {
       if ( get_option( 'show_on_front' ) === 'page' ) {
-        return get_permalink( pll_get_post( get_option( 'page_for_posts' ), $lang->slug ) );
+        $translated_post_id = pll_get_post( get_option( 'page_for_posts' ), $lang->slug );
+        if ( $translated_post_id && get_post_status( $translated_post_id ) === 'publish' ) {
+          return get_permalink( $translated_post_id );
+        } else {
+          return new WP_Error( '404', __( 'Page Not Found', 'wp-geo-redirect' ) );
+        }
       } else {
         return pll_home_url( $lang->slug );
       }
