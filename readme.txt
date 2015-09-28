@@ -4,7 +4,7 @@ Donate link: http://pomelodesign.com/donate/
 Tags: geo-redirect, multilanguage, multidomain, polylang, geolocation, redirection, geographical, redirect, localization
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: MIT
 License URI: http://opensource.org/licenses/MIT
 
@@ -25,6 +25,10 @@ Allows you to redirect visitors or switch language according to their country.
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.4 =
+
+* Fixes incorrect country redirect
 
 = 1.0.3 =
 

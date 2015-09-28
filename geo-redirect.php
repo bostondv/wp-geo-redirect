@@ -175,7 +175,6 @@ class WP_Geo_Redirect {
 
     if ( is_array( $this->geo_redirect_data['redirect'] ) ) {
       $this->getCountryId();
-      $this->country_id = 38;
 
       foreach( $this->geo_redirect_data['redirect'] as $data ) {
         if ( $this->country_id == $data['country_id'] ) {
