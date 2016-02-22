@@ -214,10 +214,6 @@ class WP_Geo_Redirect {
 
         $url = $this->getPolylangRedirectUrl( $lang_code );
 
-        //var_dump($lang_code);
-        // var_dump($url);
-        //return;
-
         if ( empty( $url ) )
           return;
 
@@ -377,7 +373,8 @@ class WP_Geo_Redirect {
 
   private function checkCurrentLang( $lang_code ) {
     $current_lang = pll_current_language();
-    if ( $current_lang === $lang_code ) {
+    // Only compare last two characters of code so that a country code will match
+    if ( substr( $current_lang, -2 ) === substr( $lang_code, -2 ) ) {
       return true;
     }
     return false;
