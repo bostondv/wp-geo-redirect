@@ -26,6 +26,10 @@ Allows you to redirect visitors or switch language according to their country.
 
 == Changelog ==
 
+= 1.1.0 =
+
+* Removes Polylang specific integration.
+
 = 1.0.6 =
 
 * Compare only last two characters of language codes so that a geo redirect doesn't happen for locales of the same country code

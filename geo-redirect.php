@@ -6,7 +6,7 @@ Description: This plugin allows you to redirect your visitors or switch language
 Author: bostondv
 Author URI: http://pomelodesign.com
 Donate link: http://pomelodesign.com/donate
-Version: 1.0.5
+Version: 1.1.0
 License: MIT
 License URI: http://opensource.org/licenses/MIT
 Text Domain: wp-geo-redirect
@@ -208,31 +208,9 @@ class WP_Geo_Redirect {
   
   private function redirectByLang( $lang_code ) {
     if ( $lang_code != '' ) {
-      if ( function_exists( 'pll_the_languages' ) ) {
-        if ( $this->checkCurrentLang( $lang_code ) )
-          return;
-
-        $url = $this->getPolylangRedirectUrl( $lang_code );
-
-        if ( empty( $url ) )
-          return;
-
-        if ( is_wp_error( $url ) ) {
-          global $wp_query;
-          $wp_query->set_404();
-          status_header( 404 );
-        } else {
-          $url = preg_replace('/\?.*/', '', $url);
-          if ( $_SERVER['QUERY_STRING'] ) {
-            $url = $url . '?' . $_SERVER['QUERY_STRING'];
-          }
-          $this->redirectTo( $url );
-        }
-      } else {
-        $lang_url = ( ( strpos( $this->request_uri, '?' ) === false ) ? '?' : '&' ) . $this->lang_slug . '=' . urlencode( $lang_code );
-        $url = $this->site_url . $this->request_uri . $lang_url;
-        $this->redirectTo( $url );
-      }
+      $lang_url = ( ( strpos( $this->request_uri, '?' ) === false ) ? '?' : '&' ) . $this->lang_slug . '=' . urlencode( $lang_code );
+      $url = $this->site_url . $this->request_uri . $lang_url;
+      $this->redirectTo( $url );
     }
   }
 
