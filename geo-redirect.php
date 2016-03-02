@@ -6,7 +6,7 @@ Description: This plugin allows you to redirect your visitors or switch language
 Author: bostondv
 Author URI: http://pomelodesign.com
 Donate link: http://pomelodesign.com/donate
-Version: 1.0.5
+Version: 1.0.7
 License: MIT
 License URI: http://opensource.org/licenses/MIT
 Text Domain: wp-geo-redirect
@@ -150,6 +150,9 @@ class WP_Geo_Redirect {
 
   public function checkIfRedirectNeeded() {
     $skip_redirect = false;
+    
+    if ( defined('DOING_AJAX') && DOING_AJAX )
+      $skip_redirect = true;
 
     if ( $this->checkAdministrator() )
       $skip_redirect = true;
